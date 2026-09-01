@@ -3,7 +3,7 @@ import random
 from datetime import date, timedelta
 from faker import Faker
 from sqlalchemy.orm import Session
-from app.database import engine, Base, SessionLocal
+from app.database import engine, Base, SessionLocal, ensure_database_exists
 from app.models import Employee, ExchangeRate
 from app.services.salary_service import DEFAULT_EXCHANGE_RATES, convert_to_usd
 
@@ -40,11 +40,10 @@ STATUSES = ["Active", "Inactive", "On Leave"]
 STATUS_WEIGHTS = [92, 5, 3]
 
 def seed_database(db: Session, num_employees: int = 10000):
-    """Seed the SQLite database with exchange rates and N employees deterministically."""
+    """Seed the PostgreSQL database with exchange rates and N employees deterministically."""
     print(f"Starting seed process for {num_employees} employees...")
     start_time = time.time()
 
-    # Re-create tables
     bind_engine = db.get_bind()
     Base.metadata.drop_all(bind=bind_engine)
     Base.metadata.create_all(bind=bind_engine)
@@ -77,7 +76,6 @@ def seed_database(db: Session, num_employees: int = 10000):
         gender = random.choices(GENDERS, weights=GENDER_WEIGHTS)[0]
         status = random.choices(STATUSES, weights=STATUS_WEIGHTS)[0]
 
-        # Local salary with slight variance
         sal_local = float(random.randint(country_info["min"], country_info["max"]))
         sal_usd = convert_to_usd(sal_local, country_info["currency"], DEFAULT_EXCHANGE_RATES)
 
@@ -100,14 +98,14 @@ def seed_database(db: Session, num_employees: int = 10000):
         }
         employees_data.append(emp_dict)
 
-    # Bulk insert
     db.bulk_insert_mappings(Employee, employees_data)
     db.commit()
 
     elapsed = time.time() - start_time
-    print(f"Successfully seeded {num_employees} employees in {elapsed:.3f} seconds!")
+    print(f"Successfully seeded {num_employees} employees into PostgreSQL in {elapsed:.3f} seconds!")
 
 if __name__ == "__main__":
+    ensure_database_exists()
     db = SessionLocal()
     try:
         seed_database(db, 10000)

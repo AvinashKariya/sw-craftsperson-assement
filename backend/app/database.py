@@ -1,26 +1,55 @@
-from sqlalchemy import create_engine, event
+import psycopg2
+from urllib.parse import urlparse
+from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.config import settings
 
-is_sqlite = "sqlite" in settings.DATABASE_URL
-connect_args = {"check_same_thread": False} if is_sqlite else {}
+def ensure_database_exists(db_url: str = None):
+    """Ensure the target PostgreSQL database exists. Creates it if missing."""
+    if not db_url:
+        db_url = settings.DATABASE_URL
+    try:
+        parsed = urlparse(db_url)
+        dbname = parsed.path.lstrip('/')
+        if not dbname or dbname == "postgres":
+            return
 
+        # Connect to default 'postgres' system database
+        user = parsed.username or "postgres"
+        password = parsed.password or "postgres"
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 5432
+
+        conn = psycopg2.connect(
+            dbname="postgres",
+            user=user,
+            password=password,
+            host=host,
+            port=port
+        )
+        conn.autocommit = True
+        cursor = conn.cursor()
+
+        # Check if database exists
+        cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s;", (dbname,))
+        exists = cursor.fetchone()
+        if not exists:
+            cursor.execute(f'CREATE DATABASE "{dbname}";')
+            print(f"PostgreSQL database '{dbname}' created successfully.")
+
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: could not verify/create database: {e}")
+
+# Pure PostgreSQL Engine Setup
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args=connect_args,
+    pool_size=10,
+    max_overflow=20,
     pool_pre_ping=True,
     echo=False
 )
-
-# SQLite Performance PRAGMAs (only applied when using SQLite)
-if is_sqlite:
-    @event.listens_for(engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL;")
-        cursor.execute("PRAGMA synchronous=NORMAL;")
-        cursor.execute("PRAGMA cache_size=-64000;")  # 64MB cache
-        cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

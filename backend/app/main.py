@@ -1,16 +1,25 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import engine, Base
+from app.database import engine, Base, ensure_database_exists
 from app.routers import employees, analytics, exchange_rates
 
-# Initialize database tables
-Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure PostgreSQL database exists and tables are initialized
+    try:
+        ensure_database_exists()
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"Warning on startup DB init: {e}")
+    yield
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="ACME Employee Salary Management & Analytics API",
-    version="1.0.0"
+    description="ACME Employee Salary Management & Analytics API (PostgreSQL)",
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS Middleware setup

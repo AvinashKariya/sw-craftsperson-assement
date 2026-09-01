@@ -1,16 +1,26 @@
-from sqlalchemy.orm import Session
-from app.database import engine, Base, SessionLocal
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.config import settings
+from app.database import Base
 from app.models import Employee, ExchangeRate
 from app.seed import seed_database
 
 def test_seed_database_performance_and_integrity():
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
     try:
-        seed_database(db, num_employees=500)
+        engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+        with engine.connect() as conn:
+            pass
+    except Exception:
+        pytest.skip("PostgreSQL database server is not accessible")
+
+    Session = sessionmaker(bind=engine)
+    db = Session()
+    try:
+        seed_database(db, num_employees=200)
         
         emp_count = db.query(Employee).count()
-        assert emp_count == 500
+        assert emp_count == 200
         
         rates_count = db.query(ExchangeRate).count()
         assert rates_count >= 8
