@@ -94,3 +94,4 @@ export interface ExchangeRate {
   rate_to_usd: number;
   updated_at?: string;
 }
+

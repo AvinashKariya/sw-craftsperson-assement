@@ -258,3 +258,4 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, e
     </div>
   );
 };
+
