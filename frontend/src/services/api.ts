@@ -12,6 +12,9 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
+// Pass ngrok-skip-browser-warning header automatically to bypass ngrok free tier HTML landing page
+axios.defaults.headers.common['ngrok-skip-browser-warning'] = '69420';
+
 export const api = {
   // Employee Endpoints
   getEmployees: async (params: {
