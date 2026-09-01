@@ -138,3 +138,4 @@ python -m pytest tests/ -v --cov=app
 
 ## ⚖️ License
 Built for Incubyte Software Craftsperson Take-Home Assessment.
+
