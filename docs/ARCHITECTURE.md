@@ -14,10 +14,10 @@ The ACME Salary Management System is built using a decoupled, API-first architec
 |                     FastAPI (Python 3.11)                   |
 |   Routers (Employees, Analytics, Rates) | Services | Models |
 +------------------------------+------------------------------+
-                               | SQLite / SQLAlchemy ORM
+                               | PostgreSQL / SQLAlchemy ORM
                                v
 +-------------------------------------------------------------+
-|                   SQLite Database (WAL Mode)                |
+|                   PostgreSQL Database                       |
 | Indexed Tables: employees, exchange_rates | 10k Seeded Rows |
 +-------------------------------------------------------------+
 ```
