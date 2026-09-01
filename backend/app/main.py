@@ -27,16 +27,17 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Explicitly register API routers
-app.include_router(employees_router)
-app.include_router(analytics_router)
-app.include_router(exchange_rates_router)
+# Mount all routers under /api namespace
+app.include_router(employees_router, prefix="/api")
+app.include_router(analytics_router, prefix="/api")
+app.include_router(exchange_rates_router, prefix="/api")
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {"status": "healthy", "project": settings.PROJECT_NAME}

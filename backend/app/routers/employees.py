@@ -9,7 +9,7 @@ from app.models import Employee, ExchangeRate
 from app.schemas import EmployeeCreate, EmployeeUpdate, EmployeeResponse, PaginatedEmployeeResponse
 from app.services.salary_service import convert_to_usd, DEFAULT_EXCHANGE_RATES
 
-router = APIRouter(prefix="/api/employees", tags=["Employees"])
+router = APIRouter(prefix="/employees", tags=["Employees"])
 
 def get_current_rates(db: Session) -> dict:
     rates = db.query(ExchangeRate).all()

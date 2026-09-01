@@ -6,7 +6,7 @@ from app.models import ExchangeRate, Employee
 from app.schemas import ExchangeRateSchema
 from app.services.salary_service import convert_to_usd
 
-router = APIRouter(prefix="/api/exchange-rates", tags=["Exchange Rates"])
+router = APIRouter(prefix="/exchange-rates", tags=["Exchange Rates"])
 
 @router.get("", response_model=List[ExchangeRateSchema])
 def list_exchange_rates(db: Session = Depends(get_db)):
@@ -28,7 +28,6 @@ def update_exchange_rate(currency: str, rate_to_usd: float, db: Session = Depend
     db.commit()
     db.refresh(rate_obj)
 
-    # Re-calculate USD equivalent salaries for employees in this currency
     affected_employees = db.query(Employee).filter(Employee.currency == curr_upper).all()
     for emp in affected_employees:
         emp.salary_usd = convert_to_usd(emp.salary_local, curr_upper, {curr_upper: rate_to_usd})

@@ -12,7 +12,7 @@ from app.services.salary_service import (
     detect_salary_outliers
 )
 
-router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
+router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 @router.get("/summary", response_model=AnalyticsSummaryResponse)
 def get_analytics_summary(db: Session = Depends(get_db)):
@@ -102,7 +102,6 @@ def get_pay_equity_report(db: Session = Depends(get_db)):
     ]
     overall_equity = calculate_gender_pay_equity(emp_dicts)
 
-    # Department-wise breakdown
     dept_map: Dict[str, List[Dict[str, Any]]] = {}
     for ed in emp_dicts:
         dept_map.setdefault(ed["department"], []).append(ed)

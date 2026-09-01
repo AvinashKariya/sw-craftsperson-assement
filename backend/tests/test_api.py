@@ -1,38 +1,25 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.config import settings
 from app.database import Base, get_db
 from app.seed import seed_database
 
-# Create PostgreSQL test engine
-try:
-    test_engine = create_engine(settings.TEST_DATABASE_URL, pool_pre_ping=True)
-    # Test connection
-    with test_engine.connect() as conn:
-        pass
-    POSTGRES_AVAILABLE = True
-except Exception:
-    # Fallback to main DATABASE_URL if test DB isn't separately created
-    try:
-        test_engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
-        with test_engine.connect() as conn:
-            pass
-        POSTGRES_AVAILABLE = True
-    except Exception:
-        POSTGRES_AVAILABLE = False
+# In-memory SQLite DB for fast deterministic API integration tests
+SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
 
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine) if POSTGRES_AVAILABLE else None
+test_engine = create_engine(
+    SQLALCHEMY_TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_db():
-    if not POSTGRES_AVAILABLE:
-        pytest.skip("PostgreSQL database is not reachable. Please start PostgreSQL server.")
-    
-    Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
     db = TestingSessionLocal()
     try:
@@ -43,8 +30,6 @@ def setup_test_db():
     Base.metadata.drop_all(bind=test_engine)
 
 def override_get_db():
-    if not POSTGRES_AVAILABLE:
-        pytest.skip("PostgreSQL database not reachable")
     db = TestingSessionLocal()
     try:
         yield db
